@@ -1,0 +1,88 @@
+Vagrantfile : 
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+
+  # Box Settings 
+  # Operating System as [Box] from https://app.vagrantup.com/boxes/search
+  config.vm.box = "bento/ubuntu-18.04"
+
+  # provider Settings
+  # VirtualBox or another "VM"  
+  config.vm.provider "virtualbox" do |vb|
+    #If you want add a bit more performance to your vagrant box inside VirtualBox.
+    vb.memory = 2048  #memory
+    vb.cpus = 4       #processors
+    end
+
+  # Network Settings
+  # How your host sees your box via browser.
+
+  #  The host is your localMachine and the guest is the box.
+     config.vm.network "forwarded_port", guest: 8080, host: 8080
+
+  
+  # How you access file from your computer.
+  # Folder Settings   first argument is your folder in your actual machine
+  # Secound argument is which folder in your box do you want to link or sync. 
+   config.vm.synced_folder ".", "/home/Desktop/app"
+
+ 
+   # outside vagrant file , you have to create bootstrap.sh file --> 
+   config.vm.provision "shell", path: "./bootstrap.sh"
+ 
+
+end
+------------------------------------------------
+---------------------------------------------
+----------------------------------------
+bootstrap.sh :
+
+
+# ---------------------------------------
+#          Java Setup
+# ---------------------------------------
+
+
+echo "Installing Open JDK 8..."
+apt-get update
+apt-get -q install -y openjdk-8-jdk openjdk-8-jre
+
+
+
+
+# ---------------------------------------
+# ---------------------------------------
+
+
+# ---------------------------------------
+#          MySQL Setup
+# ---------------------------------------
+
+# Setting MySQL root user password root/root
+debconf-set-selections <<< 'mysql-server mysql-server/root_password password root'
+debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password root'
+
+apt install mysql-server -y
+
+mysql -u root -proot -e "CREATE DATABASE NKT;"
+
+service mysql restart 
+# ---------------------------------------
+# ---------------------------------------
+
+
+# ---------------------------------------
+#          Gradle build and Run
+# ---------------------------------------
+cd /home/Desktop/app/
+
+./gradlew bootJar
+
+java -jar build/libs/nkt-0.0.1-SNAPSHOT.jar
+
+
+
+# ---------------------------------------
+# ---------------------------------------
